@@ -34,7 +34,7 @@ function AuthPage() {
 
     window.setTimeout(() => setLoading(false), 8000);
 
-    // Lovable preview runs in an iframe; GitHub sends X-Frame-Options: DENY,
+    // The preview runs in an iframe; GitHub sends X-Frame-Options: DENY,
     // so navigate the top-level window to avoid "refused to connect".
     try {
       if (window.top && window.top !== window.self) {
