@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Code2, Github, Loader2 } from "lucide-react";
 
+const CANONICAL_AUTH_ORIGIN = "https://synth-code-pal.lovable.app";
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
@@ -26,7 +28,12 @@ function AuthPage() {
 
   function signInGithub() {
     setLoading(true);
-    const url = "/api/public/auth/github/start?redirect=/repos";
+    const startUrl = new URL("/api/public/auth/github/start", CANONICAL_AUTH_ORIGIN);
+    startUrl.searchParams.set("redirect", "/repos");
+    const url = startUrl.toString();
+
+    window.setTimeout(() => setLoading(false), 8000);
+
     // Lovable preview runs in an iframe; GitHub sends X-Frame-Options: DENY,
     // so navigate the top-level window to avoid "refused to connect".
     try {
@@ -58,7 +65,7 @@ function AuthPage() {
           <button
             onClick={signInGithub}
             disabled={loading}
-            className="mt-6 w-full flex items-center justify-center gap-2 rounded-md bg-[#24292f] hover:bg-[#1b1f23] text-white px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+            className="mt-6 w-full flex items-center justify-center gap-2 rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
             Continue with GitHub
