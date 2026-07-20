@@ -26,7 +26,20 @@ function AuthPage() {
 
   function signInGithub() {
     setLoading(true);
-    window.location.href = "/api/public/auth/github/start?redirect=/repos";
+    const url = "/api/public/auth/github/start?redirect=/repos";
+    // Lovable preview runs in an iframe; GitHub sends X-Frame-Options: DENY,
+    // so navigate the top-level window to avoid "refused to connect".
+    try {
+      if (window.top && window.top !== window.self) {
+        window.top.location.href = url;
+        return;
+      }
+    } catch {
+      // cross-origin top — fall through to opening a new tab
+      window.open(url, "_blank", "noopener");
+      return;
+    }
+    window.location.href = url;
   }
 
   return (
