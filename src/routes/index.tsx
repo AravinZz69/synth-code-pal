@@ -66,14 +66,6 @@ function Landing() {
             <a href="#features" className="hover:text-foreground transition-colors">
               Features
             </a>
-            <a
-              href="https://docs.github.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-foreground transition-colors"
-            >
-              Documentation
-            </a>
           </nav>
           <Link
             to="/auth"
