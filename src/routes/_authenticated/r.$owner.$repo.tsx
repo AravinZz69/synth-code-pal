@@ -11,7 +11,7 @@ import { FileTree, type FileNode } from "@/components/file-tree";
 import { toast } from "sonner";
 import {
   Loader2, RefreshCw, MessageSquare, Wrench, FileText, Rocket, Sparkles, Send,
-  ChevronLeft,
+  ChevronLeft, LayoutDashboard,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/r/$owner/$repo")({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/r/$owner/$repo")({
   }),
 });
 
-type CenterTab = "chat" | "code" | "debug" | "docs" | "deploy";
+type CenterTab = "overview" | "chat" | "code" | "debug" | "docs" | "deploy";
 
 function WorkspacePage() {
   const { owner, repo } = Route.useParams();
@@ -35,7 +35,7 @@ function WorkspacePage() {
     },
   });
 
-  const [tab, setTab] = useState<CenterTab>("chat");
+  const [tab, setTab] = useState<CenterTab>("overview");
   const r = repository.data;
 
   if (repository.isLoading) return <Centered><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></Centered>;
@@ -46,6 +46,7 @@ function WorkspacePage() {
   const fileTree = (r.file_tree ?? []) as unknown as FileNode[];
 
   const tabs: { id: CenterTab; label: string; icon: typeof Sparkles }[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "code", label: "Code", icon: Sparkles },
     { id: "debug", label: "Debug", icon: Wrench },
@@ -106,8 +107,9 @@ function WorkspacePage() {
             ))}
           </nav>
           <div className="flex-1 min-h-0 overflow-hidden">
+            {tab === "overview" && <OverviewPanel repo={r} />}
             {tab === "chat" && <ChatPanel repositoryId={r.id} />}
-            {tab !== "chat" && <ActionPanel repositoryId={r.id} action={tab} />}
+            {tab !== "chat" && tab !== "overview" && <ActionPanel repositoryId={r.id} action={tab} />}
           </div>
         </section>
 
