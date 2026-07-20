@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Code2, LogOut, GitBranch } from "lucide-react";
+import { Code2, LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -29,22 +29,30 @@ function AuthedLayout() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border bg-card/40 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between">
-          <Link to="/repos" className="flex items-center gap-2 font-semibold">
-            <Code2 className="h-5 w-5 text-primary" />
-            <span>Talk to Code</span>
-          </Link>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <Link to="/repos" className="hover:text-foreground flex items-center gap-1.5">
-              <GitBranch className="h-4 w-4" /> Repos
+      <header className="border-b border-border bg-background">
+        <div className="mx-auto max-w-[1400px] px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link to="/repos" className="flex items-center gap-2 font-semibold text-sm">
+              <Code2 className="h-5 w-5" />
+              <span>Talk to Code</span>
             </Link>
-            <span className="font-mono text-xs">{email}</span>
+            <nav className="flex items-center gap-1 text-sm">
+              <Link
+                to="/repos"
+                className="px-2.5 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                activeProps={{ className: "px-2.5 py-1 rounded-md text-foreground bg-muted" }}
+              >
+                Repositories
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-xs text-muted-foreground hidden sm:inline">{email}</span>
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary"
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <LogOut className="h-4 w-4" /> Sign out
+              <LogOut className="h-3.5 w-3.5" /> Sign out
             </button>
           </div>
         </div>

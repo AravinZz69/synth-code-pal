@@ -1,9 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ClientOnly } from "@tanstack/react-router";
 import { getRepositoryByPath, getFileContent } from "@/lib/repos.functions";
 import { regenerateArchitecture } from "@/lib/ingest.functions";
 import { runAction } from "@/lib/actions.functions";
@@ -11,8 +10,8 @@ import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { FileTree, type FileNode } from "@/components/file-tree";
 import { toast } from "sonner";
 import {
-  Loader2, RefreshCw, MessageSquare, GitBranch, FileCode,
-  Wrench, FileText, Rocket, Sparkles, Send,
+  Loader2, RefreshCw, MessageSquare, Wrench, FileText, Rocket, Sparkles, Send,
+  ChevronLeft,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/r/$owner/$repo")({
@@ -22,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/r/$owner/$repo")({
   }),
 });
 
-type Tab = "overview" | "files" | "chat" | "actions";
+type CenterTab = "chat" | "code" | "debug" | "docs" | "deploy";
 
 function WorkspacePage() {
   const { owner, repo } = Route.useParams();
@@ -36,20 +35,37 @@ function WorkspacePage() {
     },
   });
 
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<CenterTab>("chat");
   const r = repository.data;
 
   if (repository.isLoading) return <Centered><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></Centered>;
-  if (!r) return <Centered>Repository not found. <Link to="/repos" className="text-primary underline ml-1">Back</Link></Centered>;
+  if (!r) return <Centered>Repository not found. <Link to="/repos" className="text-foreground underline ml-1">Back</Link></Centered>;
 
   const notReady = r.status !== "ready";
 
+  const fileTree = (r.file_tree ?? []) as unknown as FileNode[];
+
+  const tabs: { id: CenterTab; label: string; icon: typeof Sparkles }[] = [
+    { id: "chat", label: "Chat", icon: MessageSquare },
+    { id: "code", label: "Code", icon: Sparkles },
+    { id: "debug", label: "Debug", icon: Wrench },
+    { id: "docs", label: "Docs", icon: FileText },
+    { id: "deploy", label: "Deploy", icon: Rocket },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl px-6 py-6">
-      <div className="flex items-center gap-3 mb-4">
-        <GitBranch className="h-5 w-5 text-primary" />
-        <h1 className="text-xl font-mono">{r.owner}/{r.name}</h1>
-        <span className="text-xs text-muted-foreground">{r.default_branch}</span>
+    <div className="h-[calc(100vh-3.5rem)] flex flex-col">
+      {/* Repo header */}
+      <div className="border-b border-border bg-background px-6 h-11 flex items-center gap-3 shrink-0">
+        <Link to="/repos" className="text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{r.owner}</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-medium">{r.name}</span>
+          <span className="ml-2 text-xs text-muted-foreground font-mono">{r.default_branch}</span>
+        </div>
         {notReady && (
           <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" /> {r.status_message ?? r.status}
@@ -57,30 +73,49 @@ function WorkspacePage() {
         )}
       </div>
 
-      <nav className="flex gap-1 border-b border-border mb-6">
-        {([
-          ["overview", "Overview", Sparkles],
-          ["files", "Files", FileCode],
-          ["chat", "Chat", MessageSquare],
-          ["actions", "Actions", Wrench],
-        ] as [Tab, string, typeof Sparkles][]).map(([id, label, Icon]) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            disabled={notReady && id !== "overview"}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm border-b-2 -mb-px transition-colors ${
-              tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            <Icon className="h-4 w-4" /> {label}
-          </button>
-        ))}
-      </nav>
+      {/* Three-panel workspace */}
+      <div className="flex-1 grid grid-cols-[260px_1fr_320px] min-h-0">
+        {/* Left: file tree */}
+        <aside className="border-r border-border bg-sidebar overflow-hidden flex flex-col">
+          <div className="px-4 h-9 flex items-center text-xs font-medium uppercase tracking-wide text-muted-foreground border-b border-border">
+            Files
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            {fileTree.length > 0 ? (
+              <FilesPanel repositoryId={r.id} fileTree={fileTree} />
+            ) : (
+              <div className="p-3 text-xs text-muted-foreground">Waiting for ingestion…</div>
+            )}
+          </div>
+        </aside>
 
-      {tab === "overview" && <OverviewTab repo={r} />}
-      {tab === "files" && <FilesTab repositoryId={r.id} fileTree={(r.file_tree ?? []) as unknown as FileNode[]} />}
-      {tab === "chat" && <ChatTab repositoryId={r.id} />}
-      {tab === "actions" && <ActionsTab repositoryId={r.id} />}
+        {/* Center: chat / actions */}
+        <section className="flex flex-col min-w-0 bg-background">
+          <nav className="border-b border-border h-9 px-3 flex items-center gap-0.5">
+            {tabs.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                disabled={notReady}
+                className={`flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium transition-colors ${
+                  tab === id ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                } disabled:opacity-40 disabled:cursor-not-allowed`}
+              >
+                <Icon className="h-3.5 w-3.5" /> {label}
+              </button>
+            ))}
+          </nav>
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {tab === "chat" && <ChatPanel repositoryId={r.id} />}
+            {tab !== "chat" && <ActionPanel repositoryId={r.id} action={tab} />}
+          </div>
+        </section>
+
+        {/* Right: architecture & summary */}
+        <aside className="border-l border-border bg-sidebar overflow-auto">
+          <RightPanel repo={r} />
+        </aside>
+      </div>
     </div>
   );
 }
@@ -89,7 +124,7 @@ function Centered({ children }: { children: React.ReactNode }) {
   return <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">{children}</div>;
 }
 
-function OverviewTab({ repo }: { repo: { id: string; mermaid: string | null; tech_stack: unknown; status: string } }) {
+function RightPanel({ repo }: { repo: { id: string; mermaid: string | null; tech_stack: unknown; status: string } }) {
   const qc = useQueryClient();
   const fnRegen = useServerFn(regenerateArchitecture);
   const regen = useMutation({
@@ -100,34 +135,41 @@ function OverviewTab({ repo }: { repo: { id: string; mermaid: string | null; tec
     languages?: string[]; frameworks?: string[]; package_managers?: string[]; build_tools?: string[];
   };
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2 rounded-lg border border-border bg-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">Architecture</h2>
+    <div className="p-4 space-y-4">
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Architecture</h3>
           <button
             onClick={() => regen.mutate()}
             disabled={regen.isPending || repo.status !== "ready"}
-            className="flex items-center gap-1.5 text-xs rounded-md border border-border px-2.5 py-1 hover:bg-secondary disabled:opacity-50"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+            title="Regenerate"
           >
             {regen.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            Regenerate
           </button>
         </div>
-        {repo.mermaid ? (
-          <ClientOnly fallback={<div className="text-xs text-muted-foreground">Rendering…</div>}>
-            <MermaidDiagram code={repo.mermaid} />
-          </ClientOnly>
-        ) : (
-          <div className="text-sm text-muted-foreground">Waiting for ingestion to complete…</div>
-        )}
-      </div>
-      <div className="rounded-lg border border-border bg-card p-5">
-        <h2 className="font-semibold mb-4">Tech stack</h2>
-        <StackSection label="Languages" items={stack.languages} />
-        <StackSection label="Frameworks" items={stack.frameworks} />
-        <StackSection label="Package managers" items={stack.package_managers} />
-        <StackSection label="Build tools" items={stack.build_tools} />
-      </div>
+        <div className="rounded-md border border-border bg-card p-3">
+          {repo.mermaid ? (
+            <ClientOnly fallback={<div className="text-xs text-muted-foreground">Rendering…</div>}>
+              <MermaidDiagram code={repo.mermaid} />
+            </ClientOnly>
+          ) : (
+            <div className="text-xs text-muted-foreground">Waiting for ingestion…</div>
+          )}
+        </div>
+      </section>
+      <section>
+        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Tech stack</h3>
+        <div className="rounded-md border border-border bg-card p-3 space-y-3">
+          <StackSection label="Languages" items={stack.languages} />
+          <StackSection label="Frameworks" items={stack.frameworks} />
+          <StackSection label="Package managers" items={stack.package_managers} />
+          <StackSection label="Build tools" items={stack.build_tools} />
+          {!stack.languages?.length && !stack.frameworks?.length && (
+            <div className="text-xs text-muted-foreground">Not analyzed yet.</div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -135,18 +177,18 @@ function OverviewTab({ repo }: { repo: { id: string; mermaid: string | null; tec
 function StackSection({ label, items }: { label: string; items?: string[] }) {
   if (!items || items.length === 0) return null;
   return (
-    <div className="mb-3">
-      <div className="text-xs uppercase text-muted-foreground tracking-wide">{label}</div>
-      <div className="mt-1 flex flex-wrap gap-1.5">
+    <div>
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="mt-1 flex flex-wrap gap-1">
         {items.map((i) => (
-          <span key={i} className="rounded-md bg-secondary px-2 py-0.5 text-xs font-mono">{i}</span>
+          <span key={i} className="rounded border border-border bg-background px-1.5 py-0.5 text-[11px] font-mono">{i}</span>
         ))}
       </div>
     </div>
   );
 }
 
-function FilesTab({ repositoryId, fileTree }: { repositoryId: string; fileTree: FileNode[] }) {
+function FilesPanel({ repositoryId, fileTree }: { repositoryId: string; fileTree: FileNode[] }) {
   const fnFile = useServerFn(getFileContent);
   const [selected, setSelected] = useState<string | undefined>();
   const fileQ = useQuery({
@@ -156,22 +198,29 @@ function FilesTab({ repositoryId, fileTree }: { repositoryId: string; fileTree: 
   });
 
   return (
-    <div className="grid grid-cols-[280px_1fr] gap-4 h-[70vh]">
-      <div className="rounded-lg border border-border bg-card overflow-auto">
-        <FileTree nodes={fileTree} onSelect={setSelected} selected={selected} />
+    <>
+      <FileTree nodes={fileTree} onSelect={setSelected} selected={selected} />
+      {selected && (
+        <FileViewer path={selected} loading={fileQ.isLoading} content={fileQ.data?.content} onClose={() => setSelected(undefined)} />
+      )}
+    </>
+  );
+}
+
+function FileViewer({ path, loading, content, onClose }: { path: string; loading: boolean; content?: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-y-14 right-0 w-[45vw] bg-background border-l border-border z-40 flex flex-col shadow-lg">
+      <div className="border-b border-border px-4 h-9 flex items-center justify-between shrink-0">
+        <div className="text-xs font-mono text-muted-foreground truncate">{path}</div>
+        <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
       </div>
-      <div className="rounded-lg border border-border bg-card overflow-auto">
-        {!selected ? (
-          <div className="p-6 text-sm text-muted-foreground">Select a file to view its contents.</div>
-        ) : fileQ.isLoading ? (
+      <div className="flex-1 overflow-auto">
+        {loading ? (
           <div className="p-6 text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading {selected}…
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
           </div>
         ) : (
-          <>
-            <div className="border-b border-border px-4 py-2 text-xs font-mono text-muted-foreground">{selected}</div>
-            <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-words">{fileQ.data?.content}</pre>
-          </>
+          <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-words">{content}</pre>
         )}
       </div>
     </div>
@@ -180,7 +229,7 @@ function FilesTab({ repositoryId, fileTree }: { repositoryId: string; fileTree: 
 
 interface ChatMessage { role: "user" | "assistant"; content: string; sources?: { path: string; start_line: number; end_line: number }[] }
 
-function ChatTab({ repositoryId }: { repositoryId: string }) {
+function ChatPanel({ repositoryId }: { repositoryId: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -262,58 +311,49 @@ function ChatTab({ repositoryId }: { repositoryId: string }) {
   }
 
   return (
-    <div className="flex flex-col h-[70vh] rounded-lg border border-border bg-card">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="text-center text-sm text-muted-foreground py-16">
-            Ask anything about this codebase. Examples:
-            <div className="mt-3 flex flex-wrap gap-2 justify-center">
-              {["How does authentication work?", "Where is the database schema defined?", "Explain the entry point"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setInput(s)}
-                  className="rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary"
-                >{s}</button>
-              ))}
-            </div>
+    <div className="flex flex-col h-full">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-sm text-muted-foreground px-6 text-center">
+            Ask anything about this codebase.
           </div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
-            <div className={`max-w-[85%] rounded-lg px-4 py-3 text-sm whitespace-pre-wrap ${
-              m.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary/50"
-            }`}>
-              {m.content || <span className="opacity-60">…</span>}
-              {m.sources && m.sources.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-border/50">
-                  <div className="text-xs text-muted-foreground mb-1.5">Sources</div>
-                  <div className="flex flex-wrap gap-1.5">
+        ) : (
+          <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
+            {messages.map((m, i) => (
+              <div key={i} className="text-sm">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">
+                  {m.role === "user" ? "You" : "Talk to Code"}
+                </div>
+                <div className={`whitespace-pre-wrap leading-relaxed ${m.role === "user" ? "text-foreground" : "text-foreground"}`}>
+                  {m.content || <span className="text-muted-foreground">…</span>}
+                </div>
+                {m.sources && m.sources.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
                     {m.sources.slice(0, 6).map((s, j) => (
-                      <span key={j} className="text-xs font-mono bg-background/60 rounded px-1.5 py-0.5">
+                      <span key={j} className="text-[11px] font-mono border border-border rounded px-1.5 py-0.5 text-muted-foreground">
                         {s.path}:{s.start_line}-{s.end_line}
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-      <div className="border-t border-border p-3 flex gap-2">
+      <div className="border-t border-border p-3 flex gap-2 bg-background">
         <input
           value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
           placeholder="Ask about this repo…"
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           disabled={streaming}
         />
         <button
           onClick={send} disabled={streaming || !input.trim()}
-          className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+          className="rounded-md bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
         >
           {streaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Send
         </button>
       </div>
     </div>
@@ -327,19 +367,20 @@ const ACTIONS = [
   { id: "deploy", label: "Deploy guide", icon: Rocket, placeholder: "Any deployment constraints? (e.g. 'free tier only')" },
 ] as const;
 
-function ActionsTab({ repositoryId }: { repositoryId: string }) {
+function ActionPanel({ repositoryId, action }: { repositoryId: string; action: "code" | "debug" | "docs" | "deploy" }) {
   const fnAction = useServerFn(runAction);
-  const [selected, setSelected] = useState<(typeof ACTIONS)[number]["id"]>("code");
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<{ answer: string; sources: { path: string; start_line: number; end_line: number }[] } | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setResult(null); setPrompt(""); }, [action]);
 
   async function run() {
     if (!prompt.trim()) return;
     setLoading(true);
     setResult(null);
     try {
-      const r = await fnAction({ data: { repositoryId, action: selected, prompt: prompt.trim() } });
+      const r = await fnAction({ data: { repositoryId, action, prompt: prompt.trim() } });
       setResult(r);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
@@ -348,57 +389,56 @@ function ActionsTab({ repositoryId }: { repositoryId: string }) {
     }
   }
 
-  const current = useMemo(() => ACTIONS.find((a) => a.id === selected)!, [selected]);
+  const current = useMemo(() => ACTIONS.find((a) => a.id === action)!, [action]);
 
   return (
-    <div className="grid gap-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {ACTIONS.map((a) => (
-          <button
-            key={a.id} onClick={() => setSelected(a.id)}
-            className={`flex items-center gap-2 rounded-lg border p-3 text-left transition-colors ${
-              selected === a.id ? "border-primary bg-primary/5" : "border-border bg-card hover:bg-secondary/50"
-            }`}
-          >
-            <a.icon className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">{a.label}</span>
-          </button>
-        ))}
-      </div>
-      <div className="rounded-lg border border-border bg-card p-4">
+    <div className="h-full flex flex-col">
+      <div className="border-b border-border p-3 bg-background">
         <textarea
           value={prompt} onChange={(e) => setPrompt(e.target.value)}
           placeholder={current.placeholder}
-          rows={4}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none font-mono"
+          rows={3}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none font-mono focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <div className="mt-3 flex justify-end">
+        <div className="mt-2 flex justify-end">
           <button
             onClick={run} disabled={loading || !prompt.trim()}
-            className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+            className="rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium disabled:opacity-50 flex items-center gap-1.5"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <current.icon className="h-4 w-4" />}
             Run
           </button>
         </div>
       </div>
-      {result && (
-        <div className="rounded-lg border border-border bg-card p-5">
-          <pre className="text-sm whitespace-pre-wrap break-words">{result.answer}</pre>
-          {result.sources.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="text-xs text-muted-foreground mb-2">Sources</div>
-              <div className="flex flex-wrap gap-1.5">
-                {result.sources.map((s, i) => (
-                  <span key={i} className="text-xs font-mono bg-secondary/50 rounded px-1.5 py-0.5">
-                    {s.path}:{s.start_line}-{s.end_line}
-                  </span>
-                ))}
+      <div className="flex-1 overflow-auto">
+        {loading && !result && (
+          <div className="p-6 text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Working…
+          </div>
+        )}
+        {result && (
+          <div className="max-w-3xl mx-auto px-6 py-6">
+            <pre className="text-sm whitespace-pre-wrap break-words leading-relaxed">{result.answer}</pre>
+            {result.sources.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-border">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Sources</div>
+                <div className="flex flex-wrap gap-1">
+                  {result.sources.map((s, i) => (
+                    <span key={i} className="text-[11px] font-mono border border-border rounded px-1.5 py-0.5 text-muted-foreground">
+                      {s.path}:{s.start_line}-{s.end_line}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+        {!loading && !result && (
+          <div className="h-full flex items-center justify-center text-sm text-muted-foreground text-center px-6">
+            {current.label} — enter a prompt above.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
