@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Code2, Github, Loader2 } from "lucide-react";
 
-const CANONICAL_AUTH_ORIGIN = "https://synth-code-pal.lovable.app";
+const CANONICAL_AUTH_ORIGIN = "https://code-space.life";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,

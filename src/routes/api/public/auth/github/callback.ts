@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getAuthedUser, getAuthedUserPrimaryEmail } from "@/lib/github.server";
 
-const CANONICAL_AUTH_ORIGIN = "https://synth-code-pal.lovable.app";
+const CANONICAL_AUTH_ORIGIN = "https://code-space.life";
 
 function getAuthOrigin() {
   return (process.env.GITHUB_OAUTH_ORIGIN ?? CANONICAL_AUTH_ORIGIN).replace(/\/$/, "");

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { randomBytes } from "node:crypto";
 
-const CANONICAL_AUTH_ORIGIN = "https://synth-code-pal.lovable.app";
+const CANONICAL_AUTH_ORIGIN = "https://code-space.life";
 
 function cleanRedirectPath(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/repos";
