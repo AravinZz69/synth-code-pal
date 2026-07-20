@@ -32,7 +32,25 @@ async function generateArchitectureDiagram(apiKey: string, opts: {
         {
           role: "system",
           content:
-            "You are a senior software architect. Given a repository's file tree and detected tech stack, produce ONLY a Mermaid `graph TD` diagram (no markdown fences, no prose) that shows the main modules, their relationships, and data flow. Use short readable labels. Keep it under 25 nodes. Return ONLY the mermaid code starting with 'graph TD'.",
+            [
+              "You are a senior software architect. Produce ONLY a Mermaid `graph TD` diagram (no fences, no prose) showing the main modules and data flow for the repository.",
+              "Rules:",
+              "- Use short readable labels. Under 22 nodes total.",
+              "- Group related nodes with subgraphs when helpful (Frontend, Backend, Data, External).",
+              "- Assign every node exactly one class from this fixed set based on what it is:",
+              "  frontend | backend | database | api | auth | ai | external",
+              "- Use `class NodeId className` lines (NOT :::) at the end.",
+              "- Include these classDef lines VERBATIM at the top after `graph TD`:",
+              "  classDef frontend fill:#DBEAFE,stroke:#3B82F6,stroke-width:1.5px,color:#1E3A8A",
+              "  classDef backend fill:#E0E7FF,stroke:#6366F1,stroke-width:1.5px,color:#312E81",
+              "  classDef database fill:#EDE9FE,stroke:#8B5CF6,stroke-width:1.5px,color:#4C1D95",
+              "  classDef api fill:#CFFAFE,stroke:#06B6D4,stroke-width:1.5px,color:#164E63",
+              "  classDef auth fill:#FEF3C7,stroke:#F59E0B,stroke-width:1.5px,color:#78350F",
+              "  classDef ai fill:#FCE7F3,stroke:#EC4899,stroke-width:1.5px,color:#831843",
+              "  classDef external fill:#F1F5F9,stroke:#64748B,stroke-width:1.5px,color:#0F172A",
+              "- Use rounded nodes: NodeId([Label]). Add short edge labels like -->|reads|.",
+              "- Return ONLY mermaid starting exactly with `graph TD`.",
+            ].join("\n"),
         },
         {
           role: "user",
