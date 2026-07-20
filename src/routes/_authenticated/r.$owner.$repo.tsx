@@ -78,7 +78,7 @@ function WorkspacePage() {
       </nav>
 
       {tab === "overview" && <OverviewTab repo={r} />}
-      {tab === "files" && <FilesTab repositoryId={r.id} fileTree={(r.file_tree ?? []) as FileNode[]} />}
+      {tab === "files" && <FilesTab repositoryId={r.id} fileTree={(r.file_tree ?? []) as unknown as FileNode[]} />}
       {tab === "chat" && <ChatTab repositoryId={r.id} />}
       {tab === "actions" && <ActionsTab repositoryId={r.id} />}
     </div>
