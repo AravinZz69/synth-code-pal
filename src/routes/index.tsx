@@ -9,7 +9,6 @@ import {
   Bug,
   FileText,
 } from "lucide-react";
-import { IsoBlock } from "@/components/iso-blocks";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -105,31 +104,6 @@ function Landing() {
             View Demo
           </a>
         </div>
-        </div>
-      </section>
-
-      <section className="border-t border-border bg-background">
-        <div className="mx-auto max-w-6xl px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
-          <div className="flex justify-center">
-            <IsoBlock variant="tower" palette="mixed" width={280} height={340} />
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Built for developers
-            </p>
-            <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-              Explore any codebase, block by block.
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-md">
-              CodeSpace breaks a repository down into modules, functions, and files —
-              then rebuilds them into diagrams, docs, and answers you can actually use.
-            </p>
-            <div className="mt-6 grid grid-cols-3 gap-3 max-w-md">
-              <IsoBlock variant="staircase" palette="blue" width={140} height={160} />
-              <IsoBlock variant="cluster" palette="violet" width={140} height={160} />
-              <IsoBlock variant="cross" palette="cyan" width={140} height={160} />
-            </div>
-          </div>
         </div>
       </section>
 
