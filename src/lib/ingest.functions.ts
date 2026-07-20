@@ -51,6 +51,58 @@ async function generateArchitectureDiagram(apiKey: string, opts: {
   return text;
 }
 
+async function generateOverview(apiKey: string, opts: {
+  fileTree: unknown;
+  techStack: unknown;
+  owner: string;
+  name: string;
+  readme?: string | null;
+}): Promise<{ description: string; workflow: string }> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+    body: JSON.stringify({
+      model: "openai/gpt-5.4-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            'You analyze GitHub repositories. Return ONLY valid JSON with two keys: "description" (2-4 sentence plain-English summary of what the project is and does) and "workflow" (a numbered step-by-step text explanation of how the system works end to end — data flow, key modules, and how a typical request/action moves through the code, 6-10 concise steps, each on its own line prefixed with "1. ", "2. ", ...). No prose outside JSON, no markdown fences.',
+        },
+        {
+          role: "user",
+          content: `Repository: ${opts.owner}/${opts.name}
+Tech stack: ${JSON.stringify(opts.techStack)}
+
+File tree (partial):
+${JSON.stringify(opts.fileTree).slice(0, 5000)}
+
+README (may be empty):
+${(opts.readme ?? "").slice(0, 6000)}`,
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    return {
+      description: `${opts.owner}/${opts.name} — automated overview unavailable.`,
+      workflow: "1. Overview generation failed. Retry from the workspace.",
+    };
+  }
+  const json = (await res.json()) as { choices: { message: { content: string } }[] };
+  const text = json.choices?.[0]?.message?.content ?? "{}";
+  try {
+    const parsed = JSON.parse(text) as { description?: string; workflow?: string };
+    return {
+      description: parsed.description ?? "",
+      workflow: parsed.workflow ?? "",
+    };
+  } catch {
+    return { description: text.slice(0, 800), workflow: "" };
+  }
+}
+
 async function embedBatch(apiKey: string, inputs: string[]): Promise<number[][]> {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
     method: "POST",
@@ -153,6 +205,12 @@ export const ingestRepository = createServerFn({ method: "POST" })
         fileTree, techStack, owner: repo.owner, name: repo.name,
       });
 
+      await setStatus("processing", "Writing project overview…");
+      const readme = fileContents["README.md"] ?? fileContents["Readme.md"] ?? fileContents["readme.md"] ?? null;
+      const overview = await generateOverview(apiKey, {
+        fileTree, techStack, owner: repo.owner, name: repo.name, readme,
+      });
+
       await context.supabase
         .from("repositories")
         .update({
@@ -164,6 +222,8 @@ export const ingestRepository = createServerFn({ method: "POST" })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           file_tree: fileTree as any,
           mermaid,
+          description: overview.description || repo.description,
+          workflow: overview.workflow,
           updated_at: new Date().toISOString(),
         })
         .eq("id", repo.id);

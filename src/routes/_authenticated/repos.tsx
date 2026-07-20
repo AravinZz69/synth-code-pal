@@ -1,10 +1,10 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, KeyRound, CheckCircle2, XCircle } from "lucide-react";
-import { addRepository, deleteRepository, getGithubTokenStatus, listRepositories, setGithubToken } from "@/lib/repos.functions";
+import { Loader2, Search, CheckCircle2, XCircle, GitFork, Lock, Star, Play } from "lucide-react";
+import { listMyGithubRepos, connectRepository } from "@/lib/repos.functions";
 import { ingestRepository } from "@/lib/ingest.functions";
 
 export const Route = createFileRoute("/_authenticated/repos")({
@@ -15,180 +15,185 @@ export const Route = createFileRoute("/_authenticated/repos")({
 function ReposPage() {
   const qc = useQueryClient();
   const router = useRouter();
-  const fnList = useServerFn(listRepositories);
-  const fnAdd = useServerFn(addRepository);
-  const fnDel = useServerFn(deleteRepository);
+  const fnList = useServerFn(listMyGithubRepos);
+  const fnConnect = useServerFn(connectRepository);
   const fnIngest = useServerFn(ingestRepository);
-  const fnToken = useServerFn(setGithubToken);
-  const fnTokenStatus = useServerFn(getGithubTokenStatus);
 
-  const repos = useQuery({ queryKey: ["repos"], queryFn: () => fnList() });
-  const tokenStatus = useQuery({ queryKey: ["ghToken"], queryFn: () => fnTokenStatus() });
+  const list = useQuery({
+    queryKey: ["gh-repos"],
+    queryFn: () => fnList(),
+    refetchInterval: (q) => {
+      const repos = (q.state.data as { repos?: { connected: { status?: string } | null }[] } | undefined)?.repos;
+      const anyProcessing = repos?.some(
+        (r) => r.connected && r.connected.status !== "ready" && r.connected.status !== "error",
+      );
+      return anyProcessing ? 2000 : false;
+    },
+  });
 
-  const [url, setUrl] = useState("");
-  const [showToken, setShowToken] = useState(false);
-  const [token, setTokenValue] = useState("");
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => {
+    const all = list.data?.repos ?? [];
+    const q = query.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.full_name.toLowerCase().includes(q) ||
+        (r.description ?? "").toLowerCase().includes(q),
+    );
+  }, [list.data, query]);
 
-  // poll while any repo is processing
-  useEffect(() => {
-    const processing = repos.data?.some((r) => r.status === "processing" || r.status === "pending");
-    if (!processing) return;
-    const id = setInterval(() => qc.invalidateQueries({ queryKey: ["repos"] }), 1800);
-    return () => clearInterval(id);
-  }, [repos.data, qc]);
-
-  const addMut = useMutation({
-    mutationFn: async (u: string) => {
-      const res = await fnAdd({ data: { url: u } });
+  const connectMut = useMutation({
+    mutationFn: async (r: { owner: string; name: string }) => {
+      const res = await fnConnect({ data: { owner: r.owner, name: r.name } });
       if (!res.existing) {
         // fire-and-forget ingestion; UI polls
         fnIngest({ data: { repositoryId: res.id } }).catch((e) => toast.error(e.message));
       }
-      return res;
+      return { ...res, owner: r.owner, name: r.name };
     },
     onSuccess: (res) => {
-      setUrl("");
-      qc.invalidateQueries({ queryKey: ["repos"] });
-      toast.success(res.existing ? "Repo already added" : "Ingestion started");
+      qc.invalidateQueries({ queryKey: ["gh-repos"] });
+      if (res.existing) {
+        router.navigate({ to: "/r/$owner/$repo", params: { owner: res.owner, repo: res.name } });
+      } else {
+        toast.success("Analysis started");
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const delMut = useMutation({
-    mutationFn: async (id: string) => fnDel({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["repos"] }),
-  });
-
-  const tokenMut = useMutation({
-    mutationFn: async (t: string) => fnToken({ data: { token: t } }),
-    onSuccess: () => {
-      setTokenValue("");
-      setShowToken(false);
-      qc.invalidateQueries({ queryKey: ["ghToken"] });
-      toast.success("GitHub token saved");
-    },
-  });
-
   return (
-    <div className="mx-auto max-w-[1200px] px-6 py-10">
-      <div className="flex items-end justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Repositories</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Connect a GitHub repository to analyze and chat with it.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowToken((v) => !v)}
-          className="flex items-center gap-2 text-xs rounded-md border border-border px-3 py-1.5 hover:bg-muted"
-        >
-          <KeyRound className="h-3.5 w-3.5" />
-          {tokenStatus.data?.hasToken ? "GitHub token: set" : "Add GitHub token"}
-        </button>
+    <div className="mx-auto max-w-[1200px] px-6 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Your GitHub repositories</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {list.data?.login ? (
+            <>
+              Signed in as <span className="font-mono">@{list.data.login}</span>. Select a repository to analyze it.
+            </>
+          ) : (
+            "Loading your repositories from GitHub…"
+          )}
+        </p>
       </div>
 
-      {showToken && (
-        <div className="mb-6 rounded-md border border-border bg-card p-4">
-          <p className="text-sm text-muted-foreground mb-2">
-            Optional. Add a <a className="text-primary underline" target="_blank" rel="noreferrer" href="https://github.com/settings/tokens/new?scopes=repo">GitHub PAT with <code>repo</code> scope</a> to access private repositories and lift rate limits.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="password" value={token} onChange={(e) => setTokenValue(e.target.value)}
-              placeholder="ghp_…"
-              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              onClick={() => tokenMut.mutate(token)}
-              disabled={!token || tokenMut.isPending}
-              className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium disabled:opacity-50"
-            >Save</button>
-          </div>
-        </div>
-      )}
-
-      <form
-        onSubmit={(e) => { e.preventDefault(); if (url.trim()) addMut.mutate(url.trim()); }}
-        className="flex gap-2 mb-6"
-      >
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
-          type="text" value={url} onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://github.com/vercel/next.js or vercel/next.js"
-          className="flex-1 rounded-md border border-input bg-background px-3.5 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search repositories…"
+          className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <button
-          type="submit" disabled={addMut.isPending || !url.trim()}
-          className="flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
-        >
-          {addMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          Add repository
-        </button>
-      </form>
+      </div>
 
       <div className="rounded-md border border-border bg-card overflow-hidden">
-        {repos.isLoading ? (
-          <div className="p-6 text-sm text-muted-foreground">Loading…</div>
-        ) : (repos.data ?? []).length === 0 ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">
-            No repositories yet. Add one above to get started.
+        {list.isLoading ? (
+          <div className="p-10 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading repositories…
+          </div>
+        ) : list.isError ? (
+          <div className="p-6 text-sm text-destructive">
+            Failed to load repositories: {(list.error as Error).message}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            No repositories match your search.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="text-left font-medium px-5 py-2.5">Repository</th>
-                <th className="text-left font-medium px-5 py-2.5 hidden md:table-cell">Branch</th>
-                <th className="text-left font-medium px-5 py-2.5">Status</th>
-                <th className="text-right font-medium px-5 py-2.5">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {repos.data!.map((r) => (
-                <tr key={r.id} className="hover:bg-muted/30">
-                  <td className="px-5 py-3">
-                    <div className="font-mono text-sm">{r.owner}/{r.name}</div>
-                  </td>
-                  <td className="px-5 py-3 text-xs text-muted-foreground font-mono hidden md:table-cell">
-                    {r.default_branch ?? "main"}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <StatusIcon status={r.status} />
-                      <span className="truncate max-w-[240px]">{r.status_message ?? r.status}</span>
+          <ul className="divide-y divide-border">
+            {filtered.map((r) => {
+              const connected = r.connected;
+              const isProcessing = connected && connected.status !== "ready" && connected.status !== "error";
+              const isReady = connected?.status === "ready";
+              const isError = connected?.status === "error";
+              return (
+                <li key={r.id} className="px-5 py-4 flex items-start justify-between gap-4 hover:bg-muted/30">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium truncate">{r.full_name}</span>
+                      {r.private && (
+                        <span title="Private" className="text-muted-foreground">
+                          <Lock className="h-3 w-3" />
+                        </span>
+                      )}
+                      {r.fork && (
+                        <span title="Fork" className="text-muted-foreground">
+                          <GitFork className="h-3 w-3" />
+                        </span>
+                      )}
+                      {isReady && (
+                        <span className="text-[11px] rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-700 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Analyzed
+                        </span>
+                      )}
+                      {isProcessing && (
+                        <span className="text-[11px] rounded border border-border bg-background px-1.5 py-0.5 text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Analyzing
+                        </span>
+                      )}
+                      {isError && (
+                        <span className="text-[11px] rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-red-700 flex items-center gap-1">
+                          <XCircle className="h-3 w-3" /> Error
+                        </span>
+                      )}
                     </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      {r.status === "ready" ? (
-                        <Link
-                          to="/r/$owner/$repo" params={{ owner: r.owner, repo: r.name }}
-                          className="rounded-md border border-border px-3 py-1 text-xs font-medium hover:bg-muted"
-                        >Open</Link>
-                      ) : r.status === "error" ? (
-                        <button
-                          onClick={() => fnIngest({ data: { repositoryId: r.id } }).then(() => qc.invalidateQueries({ queryKey: ["repos"] }))}
-                          className="rounded-md border border-border px-3 py-1 text-xs hover:bg-muted"
-                        >Retry</button>
-                      ) : null}
+                    {r.description && (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{r.description}</p>
+                    )}
+                    <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground font-mono">
+                      {r.language && <span>{r.language}</span>}
+                      {r.stars > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Star className="h-3 w-3" /> {r.stars}
+                        </span>
+                      )}
+                      <span>{r.default_branch}</span>
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {isReady ? (
                       <button
-                        onClick={() => delMut.mutate(r.id)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-muted"
-                        aria-label="Delete"
-                      ><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        onClick={() =>
+                          router.navigate({ to: "/r/$owner/$repo", params: { owner: r.owner, repo: r.name } })
+                        }
+                        className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                      >
+                        Open
+                      </button>
+                    ) : isProcessing ? (
+                      <button
+                        onClick={() =>
+                          router.navigate({ to: "/r/$owner/$repo", params: { owner: r.owner, repo: r.name } })
+                        }
+                        className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                      >
+                        View
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => connectMut.mutate({ owner: r.owner, name: r.name })}
+                        disabled={connectMut.isPending && connectMut.variables?.name === r.name}
+                        className="flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+                      >
+                        {connectMut.isPending && connectMut.variables?.name === r.name ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Play className="h-3 w-3" />
+                        )}
+                        Analyze
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>
   );
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === "ready") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />;
-  if (status === "error") return <XCircle className="h-3.5 w-3.5 text-destructive" />;
-  return <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />;
 }

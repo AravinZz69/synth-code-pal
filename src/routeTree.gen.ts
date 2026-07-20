@@ -15,6 +15,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedReposRouteImport } from './routes/_authenticated/repos'
 import { Route as AuthenticatedROwnerRepoRouteImport } from './routes/_authenticated/r.$owner.$repo'
+import { Route as ApiPublicAuthGithubStartRouteImport } from './routes/api/public/auth/github/start'
+import { Route as ApiPublicAuthGithubCallbackRouteImport } from './routes/api/public/auth/github/callback'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -45,6 +47,18 @@ const AuthenticatedROwnerRepoRoute = AuthenticatedROwnerRepoRouteImport.update({
   path: '/r/$owner/$repo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicAuthGithubStartRoute =
+  ApiPublicAuthGithubStartRouteImport.update({
+    id: '/api/public/auth/github/start',
+    path: '/api/public/auth/github/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAuthGithubCallbackRoute =
+  ApiPublicAuthGithubCallbackRouteImport.update({
+    id: '/api/public/auth/github/callback',
+    path: '/api/public/auth/github/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/repos': typeof AuthenticatedReposRoute
   '/api/chat': typeof ApiChatRoute
   '/r/$owner/$repo': typeof AuthenticatedROwnerRepoRoute
+  '/api/public/auth/github/callback': typeof ApiPublicAuthGithubCallbackRoute
+  '/api/public/auth/github/start': typeof ApiPublicAuthGithubStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +75,8 @@ export interface FileRoutesByTo {
   '/repos': typeof AuthenticatedReposRoute
   '/api/chat': typeof ApiChatRoute
   '/r/$owner/$repo': typeof AuthenticatedROwnerRepoRoute
+  '/api/public/auth/github/callback': typeof ApiPublicAuthGithubCallbackRoute
+  '/api/public/auth/github/start': typeof ApiPublicAuthGithubStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +86,28 @@ export interface FileRoutesById {
   '/_authenticated/repos': typeof AuthenticatedReposRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/r/$owner/$repo': typeof AuthenticatedROwnerRepoRoute
+  '/api/public/auth/github/callback': typeof ApiPublicAuthGithubCallbackRoute
+  '/api/public/auth/github/start': typeof ApiPublicAuthGithubStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/repos' | '/api/chat' | '/r/$owner/$repo'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/repos'
+    | '/api/chat'
+    | '/r/$owner/$repo'
+    | '/api/public/auth/github/callback'
+    | '/api/public/auth/github/start'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/repos' | '/api/chat' | '/r/$owner/$repo'
+  to:
+    | '/'
+    | '/auth'
+    | '/repos'
+    | '/api/chat'
+    | '/r/$owner/$repo'
+    | '/api/public/auth/github/callback'
+    | '/api/public/auth/github/start'
   id:
     | '__root__'
     | '/'
@@ -82,6 +116,8 @@ export interface FileRouteTypes {
     | '/_authenticated/repos'
     | '/api/chat'
     | '/_authenticated/r/$owner/$repo'
+    | '/api/public/auth/github/callback'
+    | '/api/public/auth/github/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -89,6 +125,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPublicAuthGithubCallbackRoute: typeof ApiPublicAuthGithubCallbackRoute
+  ApiPublicAuthGithubStartRoute: typeof ApiPublicAuthGithubStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -135,6 +173,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedROwnerRepoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/auth/github/start': {
+      id: '/api/public/auth/github/start'
+      path: '/api/public/auth/github/start'
+      fullPath: '/api/public/auth/github/start'
+      preLoaderRoute: typeof ApiPublicAuthGithubStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth/github/callback': {
+      id: '/api/public/auth/github/callback'
+      path: '/api/public/auth/github/callback'
+      fullPath: '/api/public/auth/github/callback'
+      preLoaderRoute: typeof ApiPublicAuthGithubCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -156,6 +208,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPublicAuthGithubCallbackRoute: ApiPublicAuthGithubCallbackRoute,
+  ApiPublicAuthGithubStartRoute: ApiPublicAuthGithubStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

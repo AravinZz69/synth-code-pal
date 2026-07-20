@@ -61,16 +61,22 @@ export type Database = {
       github_tokens: {
         Row: {
           access_token: string
+          github_id: number | null
+          github_login: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           access_token: string
+          github_id?: number | null
+          github_login?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           access_token?: string
+          github_id?: number | null
+          github_login?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -80,6 +86,7 @@ export type Database = {
         Row: {
           created_at: string
           default_branch: string | null
+          description: string | null
           file_tree: Json | null
           id: string
           mermaid: string | null
@@ -90,10 +97,12 @@ export type Database = {
           tech_stack: Json | null
           updated_at: string
           user_id: string
+          workflow: string | null
         }
         Insert: {
           created_at?: string
           default_branch?: string | null
+          description?: string | null
           file_tree?: Json | null
           id?: string
           mermaid?: string | null
@@ -104,10 +113,12 @@ export type Database = {
           tech_stack?: Json | null
           updated_at?: string
           user_id: string
+          workflow?: string | null
         }
         Update: {
           created_at?: string
           default_branch?: string | null
+          description?: string | null
           file_tree?: Json | null
           id?: string
           mermaid?: string | null
@@ -118,6 +129,7 @@ export type Database = {
           tech_stack?: Json | null
           updated_at?: string
           user_id?: string
+          workflow?: string | null
         }
         Relationships: []
       }

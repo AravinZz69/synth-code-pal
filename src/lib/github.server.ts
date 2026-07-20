@@ -54,6 +54,49 @@ export async function getRepo(owner: string, repo: string, token?: string) {
   return ghFetch<GhRepoInfo>(`/repos/${owner}/${repo}`, token);
 }
 
+export interface GhUserRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: { login: string };
+  private: boolean;
+  fork: boolean;
+  description: string | null;
+  default_branch: string;
+  language: string | null;
+  stargazers_count: number;
+  updated_at: string;
+}
+
+export async function listAllUserRepos(token: string): Promise<GhUserRepo[]> {
+  const out: GhUserRepo[] = [];
+  for (let page = 1; page <= 5; page++) {
+    const res = await fetch(
+      `${GH}/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator&page=${page}`,
+      { headers: headers(token) },
+    );
+    if (!res.ok) break;
+    const chunk = (await res.json()) as GhUserRepo[];
+    out.push(...chunk);
+    if (chunk.length < 100) break;
+  }
+  return out;
+}
+
+export async function getAuthedUser(token: string): Promise<{ id: number; login: string; email: string | null; name: string | null; avatar_url: string }> {
+  return ghFetch(`/user`, token);
+}
+
+export async function getAuthedUserPrimaryEmail(token: string): Promise<string | null> {
+  try {
+    const emails = await ghFetch<{ email: string; primary: boolean; verified: boolean }[]>(`/user/emails`, token);
+    const primary = emails.find((e) => e.primary && e.verified) ?? emails.find((e) => e.verified) ?? emails[0];
+    return primary?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getBranchSha(owner: string, repo: string, branch: string, token?: string) {
   const b = await ghFetch<{ commit: { sha: string } }>(`/repos/${owner}/${repo}/branches/${branch}`, token);
   return b.commit.sha;
