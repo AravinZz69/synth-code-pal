@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        const system = `You are Talk to Code, an expert assistant for the GitHub repository ${repo.owner}/${repo.name}.
+        const system = `You are CodeSpace, an expert assistant for the GitHub repository ${repo.owner}/${repo.name}.
 Use the retrieved code snippets below to answer the user's question. Cite files as \`path:lineStart-lineEnd\`.
 If the answer isn't in the snippets, say so and suggest which files might contain it.
 

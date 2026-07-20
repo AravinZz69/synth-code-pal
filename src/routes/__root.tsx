@@ -83,19 +83,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Talk to Code turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides.",
+          "CodeSpace turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides.",
       },
-      { name: "author", content: "Talk to Code" },
+      { name: "author", content: "CodeSpace" },
       { property: "og:title", content: "CodeSpace — Chat with any GitHub repo" },
       {
         property: "og:description",
         content:
-          "Talk to Code turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides.",
+          "CodeSpace turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "CodeSpace — Chat with any GitHub repo" },
-      { name: "twitter:description", content: "Talk to Code turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides." },
+      { name: "twitter:description", content: "CodeSpace turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides." },
     ],
     links: [
       {

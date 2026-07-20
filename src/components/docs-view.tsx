@@ -78,7 +78,7 @@ export function DocsView({ repositoryId, repoLabel }: { repositoryId: string; re
           <div className="max-w-3xl mx-auto px-8 py-8">
             <div ref={printRef} className="docs-print">
               <header className="mb-8 pb-6 border-b-2" style={{ borderColor: "#6366F1" }}>
-                <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Talk to Code · Documentation</div>
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">CodeSpace · Documentation</div>
                 <h1 className="text-3xl font-bold tracking-tight">{repoLabel}</h1>
               </header>
               <article className="docs-md">

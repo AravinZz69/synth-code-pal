@@ -9,7 +9,7 @@ import { ingestRepository } from "@/lib/ingest.functions";
 
 export const Route = createFileRoute("/_authenticated/repos")({
   component: ReposPage,
-  head: () => ({ meta: [{ title: "Your repositories — Talk to Code" }] }),
+  head: () => ({ meta: [{ title: "Your repositories — CodeSpace" }] }),
 });
 
 function ReposPage() {

@@ -9,8 +9,8 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — Talk to Code" },
-      { name: "description", content: "Sign in to Talk to Code to connect a GitHub repo and start chatting with your code." },
+      { title: "Sign in — CodeSpace" },
+      { name: "description", content: "Sign in to CodeSpace to connect a GitHub repo and start chatting with your code." },
     ],
   }),
   component: AuthPage,
@@ -54,10 +54,10 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-2 mb-8">
           <Code2 className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold">Talk to Code</span>
+          <span className="text-lg font-semibold">CodeSpace</span>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
-          <h1 className="text-xl font-semibold text-center">Welcome to Talk to Code</h1>
+          <h1 className="text-xl font-semibold text-center">Welcome to CodeSpace</h1>
           <p className="mt-1 text-center text-sm text-muted-foreground">
             Sign in with GitHub to browse your repositories and chat with your code.
           </p>
