@@ -8,6 +8,8 @@ import { regenerateArchitecture } from "@/lib/ingest.functions";
 import { runAction } from "@/lib/actions.functions";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { FileTree, type FileNode } from "@/components/file-tree";
+import { WorkflowDiagram, type WorkflowStep } from "@/components/workflow-diagram";
+import { DocsView } from "@/components/docs-view";
 import { toast } from "sonner";
 import {
   Loader2, RefreshCw, MessageSquare, Wrench, FileText, Rocket, Sparkles, Send,
@@ -109,7 +111,8 @@ function WorkspacePage() {
           <div className="flex-1 min-h-0 overflow-hidden">
             {tab === "overview" && <OverviewPanel repo={r} />}
             {tab === "chat" && <ChatPanel repositoryId={r.id} />}
-            {tab !== "chat" && tab !== "overview" && <ActionPanel repositoryId={r.id} action={tab} />}
+            {tab === "docs" && <DocsView repositoryId={r.id} repoLabel={`${r.owner}/${r.name}`} />}
+            {(tab === "code" || tab === "debug" || tab === "deploy") && <ActionPanel repositoryId={r.id} action={tab} />}
           </div>
         </section>
 
