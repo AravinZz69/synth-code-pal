@@ -126,6 +126,88 @@ function Centered({ children }: { children: React.ReactNode }) {
   return <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">{children}</div>;
 }
 
+function OverviewPanel({ repo }: { repo: { id: string; owner: string; name: string; description: string | null; workflow: string | null; mermaid: string | null; status: string; status_message: string | null; tech_stack: unknown } }) {
+  const stack = (repo.tech_stack ?? {}) as {
+    languages?: string[]; frameworks?: string[]; package_managers?: string[]; build_tools?: string[];
+  };
+  const workflowSteps = (repo.workflow ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (repo.status !== "ready") {
+    return (
+      <div className="h-full flex flex-col items-center justify-center px-6 text-center gap-3">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="text-sm text-muted-foreground">
+          {repo.status_message ?? "Analyzing repository…"}
+        </div>
+        <div className="text-xs text-muted-foreground max-w-md">
+          Cloning file tree, chunking code, generating embeddings, and writing the project overview. This usually takes 30–90 seconds.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-auto">
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+        <section>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Description</div>
+          <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+            {repo.description || "No description generated."}
+          </p>
+        </section>
+
+        <section>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Workflow</div>
+          {workflowSteps.length > 0 ? (
+            <ol className="space-y-2 text-sm leading-relaxed">
+              {workflowSteps.map((step, i) => {
+                const cleaned = step.replace(/^\d+[.)]\s*/, "");
+                return (
+                  <li key={i} className="flex gap-3">
+                    <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-muted text-[11px] font-medium flex items-center justify-center text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="text-foreground">{cleaned}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted-foreground">No workflow generated.</p>
+          )}
+        </section>
+
+        <section>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Architecture</div>
+          <div className="rounded-md border border-border bg-card p-4">
+            {repo.mermaid ? (
+              <ClientOnly fallback={<div className="text-xs text-muted-foreground">Rendering diagram…</div>}>
+                <MermaidDiagram code={repo.mermaid} />
+              </ClientOnly>
+            ) : (
+              <div className="text-xs text-muted-foreground">No diagram available.</div>
+            )}
+          </div>
+        </section>
+
+        {(stack.languages?.length || stack.frameworks?.length) && (
+          <section>
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Tech stack</div>
+            <div className="flex flex-wrap gap-1.5">
+              {[...(stack.languages ?? []), ...(stack.frameworks ?? []), ...(stack.build_tools ?? []), ...(stack.package_managers ?? [])].map((t) => (
+                <span key={t} className="rounded border border-border bg-background px-2 py-0.5 text-[11px] font-mono">{t}</span>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RightPanel({ repo }: { repo: { id: string; mermaid: string | null; tech_stack: unknown; status: string } }) {
   const qc = useQueryClient();
   const fnRegen = useServerFn(regenerateArchitecture);
