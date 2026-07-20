@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, KeyRound, CheckCircle2, XCircle, Circle } from "lucide-react";
+import { Loader2, Plus, Trash2, KeyRound, CheckCircle2, XCircle } from "lucide-react";
 import { addRepository, deleteRepository, getGithubTokenStatus, listRepositories, setGithubToken } from "@/lib/repos.functions";
 import { ingestRepository } from "@/lib/ingest.functions";
 
