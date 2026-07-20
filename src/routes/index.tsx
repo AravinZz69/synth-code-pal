@@ -84,7 +84,10 @@ function Landing() {
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-3xl px-6 pt-24 pb-20 text-center">
+      <section className="relative overflow-hidden">
+        <IsoDecor side="left" />
+        <IsoDecor side="right" />
+        <div className="relative mx-auto w-full max-w-3xl px-6 pt-24 pb-20 text-center">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
           Talk to Code
         </h1>
@@ -108,6 +111,7 @@ function Landing() {
           >
             View Demo
           </a>
+        </div>
         </div>
       </section>
 
@@ -135,6 +139,106 @@ function Landing() {
       <footer className="border-t border-border py-5 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} Talk to Code
       </footer>
+    </div>
+  );
+}
+
+function IsoDecor({ side }: { side: "left" | "right" }) {
+  const isLeft = side === "left";
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute top-1/2 -translate-y-1/2 hidden md:block ${
+        isLeft ? "left-0 lg:left-6" : "right-0 lg:right-6"
+      }`}
+    >
+      <svg
+        width="260"
+        height="320"
+        viewBox="0 0 260 320"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="opacity-70 lg:opacity-80"
+      >
+        <defs>
+          <g id={`iso-cube-${side}`}>
+            {/* isometric cube: top, left, right */}
+            <polygon
+              points="0,-20 34.64,0 0,20 -34.64,0"
+              fill="var(--muted)"
+              stroke="var(--border)"
+              strokeWidth="1"
+            />
+            <polygon
+              points="-34.64,0 0,20 0,60 -34.64,40"
+              fill="var(--background)"
+              stroke="var(--border)"
+              strokeWidth="1"
+            />
+            <polygon
+              points="34.64,0 0,20 0,60 34.64,40"
+              fill="var(--secondary)"
+              stroke="var(--border)"
+              strokeWidth="1"
+            />
+          </g>
+        </defs>
+
+        {isLeft ? (
+          <g>
+            {/* stacked pyramid of cubes */}
+            <g className="iso-float-a" transform="translate(80,220)">
+              <use href={`#iso-cube-${side}`} />
+            </g>
+            <g className="iso-float-b" transform="translate(150,180)">
+              <use href={`#iso-cube-${side}`} />
+            </g>
+            <g className="iso-float-a" transform="translate(115,160)">
+              <use href={`#iso-cube-${side}`} />
+            </g>
+            <g className="iso-float-c" transform="translate(115,100)">
+              <use href={`#iso-cube-${side}`} />
+            </g>
+            <g className="iso-float-b" transform="translate(45,180)">
+              <use href={`#iso-cube-${side}`} />
+            </g>
+            {/* floating detached cube */}
+            <g className="iso-float-c" transform="translate(190,90)">
+              <use href={`#iso-cube-${side}`} transform="scale(0.6)" />
+            </g>
+            {/* connector line */}
+            <line
+              x1="150"
+              y1="90"
+              x2="185"
+              y2="90"
+              stroke="var(--border)"
+              strokeDasharray="2 3"
+            />
+          </g>
+        ) : (
+          <g>
+            {/* grid wall of small cubes */}
+            {Array.from({ length: 4 }).map((_, row) =>
+              Array.from({ length: 3 }).map((_, col) => {
+                const delay = ((row + col) % 3) as 0 | 1 | 2;
+                const cls = ["iso-float-a", "iso-float-b", "iso-float-c"][delay];
+                const x = 60 + col * 55;
+                const y = 60 + row * 55 + (col % 2) * 8;
+                return (
+                  <g
+                    key={`${row}-${col}`}
+                    className={cls}
+                    transform={`translate(${x},${y}) scale(0.7)`}
+                  >
+                    <use href={`#iso-cube-${side}`} />
+                  </g>
+                );
+              })
+            )}
+          </g>
+        )}
+      </svg>
     </div>
   );
 }

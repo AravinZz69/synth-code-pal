@@ -149,3 +149,16 @@
     font-family: var(--font-mono);
   }
 }
+
+@keyframes iso-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.iso-float-a { animation: iso-float 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.iso-float-b { animation: iso-float 7s ease-in-out infinite; animation-delay: -2s; transform-box: fill-box; transform-origin: center; }
+.iso-float-c { animation: iso-float 8s ease-in-out infinite; animation-delay: -4s; transform-box: fill-box; transform-origin: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .iso-float-a, .iso-float-b, .iso-float-c { animation: none; }
+}
