@@ -30,8 +30,7 @@ export function DocsView({ repositoryId, repoLabel }: { repositoryId: string; re
           image: { type: "jpeg", quality: 0.95 },
           html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["css", "legacy"] },
-        })
+        } as unknown as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
         .from(printRef.current)
         .save();
     } catch (e) {
