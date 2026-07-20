@@ -13,7 +13,7 @@ import { DocsView } from "@/components/docs-view";
 import { toast } from "sonner";
 import {
   Loader2, RefreshCw, MessageSquare, Wrench, FileText, Rocket, Sparkles, Send,
-  ChevronLeft, LayoutDashboard,
+  ChevronLeft, LayoutDashboard, Home,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/r/$owner/$repo")({
@@ -47,19 +47,22 @@ function WorkspacePage() {
 
   const fileTree = (r.file_tree ?? []) as unknown as FileNode[];
 
-  const tabs: { id: CenterTab; label: string; icon: typeof Sparkles }[] = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "chat", label: "Chat", icon: MessageSquare },
-    { id: "code", label: "Code", icon: Sparkles },
-    { id: "debug", label: "Debug", icon: Wrench },
-    { id: "docs", label: "Docs", icon: FileText },
-    { id: "deploy", label: "Deploy", icon: Rocket },
+  const tabs: { id: CenterTab; label: string; icon: typeof Sparkles; color: string }[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard, color: "#6366f1" },
+    { id: "chat", label: "Chat", icon: MessageSquare, color: "#0ea5e9" },
+    { id: "code", label: "Code", icon: Sparkles, color: "#a855f7" },
+    { id: "debug", label: "Debug", icon: Wrench, color: "#f59e0b" },
+    { id: "docs", label: "Docs", icon: FileText, color: "#10b981" },
+    { id: "deploy", label: "Deploy", icon: Rocket, color: "#ec4899" },
   ];
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex flex-col">
       {/* Repo header */}
       <div className="border-b border-border bg-background px-6 h-11 flex items-center gap-3 shrink-0">
+        <Link to="/" className="text-muted-foreground hover:text-foreground" title="Home">
+          <Home className="h-4 w-4" />
+        </Link>
         <Link to="/repos" className="text-muted-foreground hover:text-foreground">
           <ChevronLeft className="h-4 w-4" />
         </Link>
@@ -95,7 +98,7 @@ function WorkspacePage() {
         {/* Center: chat / actions */}
         <section className="flex flex-col min-w-0 bg-background">
           <nav className="border-b border-border h-9 px-3 flex items-center gap-0.5">
-            {tabs.map(({ id, label, icon: Icon }) => (
+            {tabs.map(({ id, label, icon: Icon, color }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
@@ -104,7 +107,7 @@ function WorkspacePage() {
                   tab === id ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 } disabled:opacity-40 disabled:cursor-not-allowed`}
               >
-                <Icon className="h-3.5 w-3.5" /> {label}
+                <Icon className="h-3.5 w-3.5" style={{ color }} /> {label}
               </button>
             ))}
           </nav>
