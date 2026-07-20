@@ -84,7 +84,10 @@ function Landing() {
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-3xl px-6 pt-24 pb-20 text-center">
+      <section className="relative overflow-hidden">
+        <IsoDecor side="left" />
+        <IsoDecor side="right" />
+        <div className="relative mx-auto w-full max-w-3xl px-6 pt-24 pb-20 text-center">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
           Talk to Code
         </h1>
@@ -108,6 +111,7 @@ function Landing() {
           >
             View Demo
           </a>
+        </div>
         </div>
       </section>
 
