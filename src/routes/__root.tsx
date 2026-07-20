@@ -96,8 +96,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "CodeSpace — Chat with any GitHub repo" },
       { name: "twitter:description", content: "Talk to Code turns any GitHub repository into an interactive AI knowledge base — instant architecture diagrams, semantic search, code generation, debugging, docs, and deploy guides." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/92144d9d-1a7e-48d1-83e8-8efe78d5ebe5/id-preview-660c5350--cd6cf086-8320-436c-bd22-c81de61a374d.lovable.app-1784566670163.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/92144d9d-1a7e-48d1-83e8-8efe78d5ebe5/id-preview-660c5350--cd6cf086-8320-436c-bd22-c81de61a374d.lovable.app-1784566670163.png" },
     ],
     links: [
       {
