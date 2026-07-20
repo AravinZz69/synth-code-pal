@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { fetchRawFile, getRepo, parseRepoUrl } from "./github.server";
+import { fetchRawFile, getRepo, listAllUserRepos, parseRepoUrl } from "./github.server";
 
 export const listRepositories = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -103,6 +103,67 @@ export const getGithubTokenStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data } = await context.supabase.from("github_tokens").select("user_id").maybeSingle();
     return { hasToken: !!data };
+  });
+
+export const listMyGithubRepos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: tokenRow } = await context.supabase
+      .from("github_tokens").select("access_token, github_login").maybeSingle();
+    if (!tokenRow?.access_token) throw new Error("Not signed in with GitHub");
+    const repos = await listAllUserRepos(tokenRow.access_token);
+    // Already-connected repos in our DB
+    const { data: connected } = await context.supabase
+      .from("repositories")
+      .select("id, owner, name, status");
+    const byKey = new Map((connected ?? []).map((r) => [`${r.owner}/${r.name}`, r]));
+    return {
+      login: tokenRow.github_login,
+      repos: repos.map((r) => ({
+        id: r.id,
+        owner: r.owner.login,
+        name: r.name,
+        full_name: r.full_name,
+        description: r.description,
+        private: r.private,
+        fork: r.fork,
+        language: r.language,
+        stars: r.stargazers_count,
+        default_branch: r.default_branch,
+        updated_at: r.updated_at,
+        connected: byKey.get(r.full_name) ?? null,
+      })),
+    };
+  });
+
+export const connectRepository = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ owner: z.string(), name: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: existing } = await context.supabase
+      .from("repositories")
+      .select("id, status")
+      .eq("owner", data.owner)
+      .eq("name", data.name)
+      .maybeSingle();
+    if (existing) return { id: existing.id, existing: true };
+    const { data: tokenRow } = await context.supabase
+      .from("github_tokens").select("access_token").maybeSingle();
+    const info = await getRepo(data.owner, data.name, tokenRow?.access_token ?? undefined);
+    const { data: inserted, error } = await context.supabase
+      .from("repositories")
+      .insert({
+        user_id: context.userId,
+        owner: data.owner,
+        name: data.name,
+        default_branch: info.default_branch,
+        description: info.description,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: inserted.id, existing: false };
   });
 
 export const getFileContent = createServerFn({ method: "POST" })
