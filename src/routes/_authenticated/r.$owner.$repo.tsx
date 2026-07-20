@@ -19,7 +19,7 @@ import {
 export const Route = createFileRoute("/_authenticated/r/$owner/$repo")({
   component: WorkspacePage,
   head: ({ params }) => ({
-    meta: [{ title: `${params.owner}/${params.repo} — Talk to Code` }],
+    meta: [{ title: `${params.owner}/${params.repo} — CodeSpace` }],
   }),
 });
 
@@ -410,7 +410,7 @@ function ChatPanel({ repositoryId }: { repositoryId: string }) {
             {messages.map((m, i) => (
               <div key={i} className="text-sm">
                 <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">
-                  {m.role === "user" ? "You" : "Talk to Code"}
+                  {m.role === "user" ? "You" : "CodeSpace"}
                 </div>
                 <div className={`whitespace-pre-wrap leading-relaxed ${m.role === "user" ? "text-foreground" : "text-foreground"}`}>
                   {m.content || <span className="text-muted-foreground">…</span>}

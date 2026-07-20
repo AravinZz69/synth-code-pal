@@ -60,7 +60,7 @@ function Landing() {
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
             <Code2 className="h-5 w-5" />
-            <span>Talk to Code</span>
+            <span>CodeSpace</span>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">
@@ -129,7 +129,7 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Talk to Code
+        © {new Date().getFullYear()} CodeSpace
       </footer>
     </div>
   );

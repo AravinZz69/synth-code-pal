@@ -34,7 +34,7 @@ function AuthedLayout() {
           <div className="flex items-center gap-6">
             <Link to="/repos" className="flex items-center gap-2 font-semibold text-sm">
               <Code2 className="h-5 w-5" />
-              <span>Talk to Code</span>
+              <span>CodeSpace</span>
             </Link>
             <nav className="flex items-center gap-1 text-sm">
               <Link
