@@ -22,7 +22,9 @@ export function DocsView({ repositoryId, repoLabel }: { repositoryId: string; re
   const downloadPdf = async () => {
     if (!printRef.current) return;
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
+      const html2pdf = (await import("html2pdf.js")).default as unknown as () => {
+        set: (opts: Record<string, unknown>) => { from: (el: HTMLElement) => { save: () => Promise<void> } };
+      };
       await html2pdf()
         .set({
           margin: [12, 12, 14, 12],
@@ -30,7 +32,7 @@ export function DocsView({ repositoryId, repoLabel }: { repositoryId: string; re
           image: { type: "jpeg", quality: 0.95 },
           html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        } as unknown as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
+        })
         .from(printRef.current)
         .save();
     } catch (e) {
