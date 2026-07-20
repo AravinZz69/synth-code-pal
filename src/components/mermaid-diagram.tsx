@@ -14,14 +14,14 @@ export function MermaidDiagram({ code }: { code: string }) {
         const mermaid = (await import("mermaid")).default;
         mermaid.initialize({
           startOnLoad: false,
-          theme: "dark",
+          theme: "neutral",
           themeVariables: {
-            background: "#0f1517",
-            primaryColor: "#1a2226",
-            primaryTextColor: "#e8eef1",
-            primaryBorderColor: "#38b48b",
-            lineColor: "#556",
-            fontFamily: "'Space Grotesk', sans-serif",
+            background: "#ffffff",
+            primaryColor: "#f5f5f7",
+            primaryTextColor: "#1a1a1a",
+            primaryBorderColor: "#d4d4d8",
+            lineColor: "#9ca3af",
+            fontFamily: "'Inter', sans-serif",
           },
           securityLevel: "loose",
         });
