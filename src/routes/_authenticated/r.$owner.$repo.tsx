@@ -137,6 +137,16 @@ function OverviewPanel({ repo }: { repo: { id: string; owner: string; name: stri
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
+  const COLORS: WorkflowStep["color"][] = ["blue", "indigo", "violet", "cyan", "amber", "pink", "emerald", "slate"];
+  const wfDiagram: WorkflowStep[] = workflowSteps.map((raw, i) => {
+    const cleaned = raw.replace(/^\d+[.)]\s*/, "");
+    const [head, ...rest] = cleaned.split(/[:—-]\s+/);
+    return {
+      title: (head ?? cleaned).slice(0, 90),
+      detail: rest.length ? rest.join(" — ") : cleaned,
+      color: COLORS[i % COLORS.length],
+    };
+  });
 
   if (repo.status !== "ready") {
     return (
@@ -164,20 +174,8 @@ function OverviewPanel({ repo }: { repo: { id: string; owner: string; name: stri
 
         <section>
           <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Workflow</div>
-          {workflowSteps.length > 0 ? (
-            <ol className="space-y-2 text-sm leading-relaxed">
-              {workflowSteps.map((step, i) => {
-                const cleaned = step.replace(/^\d+[.)]\s*/, "");
-                return (
-                  <li key={i} className="flex gap-3">
-                    <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-muted text-[11px] font-medium flex items-center justify-center text-muted-foreground">
-                      {i + 1}
-                    </span>
-                    <span className="text-foreground">{cleaned}</span>
-                  </li>
-                );
-              })}
-            </ol>
+          {wfDiagram.length > 0 ? (
+            <WorkflowDiagram steps={wfDiagram} />
           ) : (
             <p className="text-sm text-muted-foreground">No workflow generated.</p>
           )}
