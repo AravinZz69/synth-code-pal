@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { randomBytes } from "node:crypto";
 
+const CANONICAL_AUTH_ORIGIN = "https://synth-code-pal.lovable.app";
+
+function cleanRedirectPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/repos";
+  return value;
+}
+
+function getAuthOrigin() {
+  return (process.env.GITHUB_OAUTH_ORIGIN ?? CANONICAL_AUTH_ORIGIN).replace(/\/$/, "");
+}
+
 export const Route = createFileRoute("/api/public/auth/github/start")({
   server: {
     handlers: {
@@ -13,11 +24,22 @@ export const Route = createFileRoute("/api/public/auth/github/start")({
           );
         }
         const url = new URL(request.url);
-        const redirectAfter = url.searchParams.get("redirect") ?? "/repos";
+        const redirectAfter = cleanRedirectPath(url.searchParams.get("redirect"));
+        const authOrigin = getAuthOrigin();
+
+        if (url.origin !== authOrigin) {
+          const canonicalStart = new URL("/api/public/auth/github/start", authOrigin);
+          canonicalStart.searchParams.set("redirect", redirectAfter);
+          return new Response(null, {
+            status: 302,
+            headers: { Location: canonicalStart.toString() },
+          });
+        }
+
         const state = randomBytes(24).toString("hex");
         // Cookie carries state + post-login redirect
         const payload = `${state}|${redirectAfter}`;
-        const callback = `${url.origin}/api/public/auth/github/callback`;
+        const callback = `${authOrigin}/api/public/auth/github/callback`;
         const authorize = new URL("https://github.com/login/oauth/authorize");
         authorize.searchParams.set("client_id", clientId);
         authorize.searchParams.set("redirect_uri", callback);

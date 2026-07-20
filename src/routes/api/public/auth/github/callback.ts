@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getAuthedUser, getAuthedUserPrimaryEmail } from "@/lib/github.server";
 
+const CANONICAL_AUTH_ORIGIN = "https://synth-code-pal.lovable.app";
+
+function getAuthOrigin() {
+  return (process.env.GITHUB_OAUTH_ORIGIN ?? CANONICAL_AUTH_ORIGIN).replace(/\/$/, "");
+}
+
+function cleanRedirectPath(value: string | undefined) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/repos";
+  return value;
+}
+
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
   for (const part of header.split(";")) {
@@ -33,9 +44,15 @@ export const Route = createFileRoute("/api/public/auth/github/callback")({
         if (err) return html(`GitHub returned an error: ${err}`);
         if (!code || !state) return html("Missing OAuth code or state.");
 
+        const authOrigin = getAuthOrigin();
+        if (url.origin !== authOrigin) {
+          return html("This sign-in link was opened on the wrong domain. Please start again from the main app URL.");
+        }
+
         const cookie = parseCookie(request.headers.get("cookie"), "gh_oauth");
         if (!cookie) return html("OAuth session expired. Please try again.");
-        const [cookieState, redirectAfter = "/repos"] = cookie.split("|");
+        const [cookieState, redirectValue] = cookie.split("|");
+        const redirectAfter = cleanRedirectPath(redirectValue);
         if (cookieState !== state) return html("OAuth state mismatch. Please try again.");
 
         // 1) Exchange code for token
@@ -46,7 +63,7 @@ export const Route = createFileRoute("/api/public/auth/github/callback")({
             client_id: clientId,
             client_secret: clientSecret,
             code,
-            redirect_uri: `${url.origin}/api/public/auth/github/callback`,
+            redirect_uri: `${authOrigin}/api/public/auth/github/callback`,
           }),
         });
         if (!tokenRes.ok) return html(`Token exchange failed (${tokenRes.status}).`);
