@@ -159,8 +159,10 @@ export const ingestRepository = createServerFn({ method: "POST" })
           status: "ready",
           status_message: "Ready",
           default_branch: branch,
-          tech_stack: techStack as unknown as Record<string, unknown>,
-          file_tree: fileTree as unknown as Record<string, unknown>[],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tech_stack: techStack as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          file_tree: fileTree as any,
           mermaid,
           updated_at: new Date().toISOString(),
         })
