@@ -165,20 +165,20 @@ function IsoDecor({ side }: { side: "left" | "right" }) {
             {/* isometric cube: top, left, right */}
             <polygon
               points="0,-20 34.64,0 0,20 -34.64,0"
-              fill="var(--muted)"
-              stroke="var(--border)"
+              fill="var(--iso-top)"
+              stroke="var(--iso-stroke)"
               strokeWidth="1"
             />
             <polygon
               points="-34.64,0 0,20 0,60 -34.64,40"
-              fill="var(--background)"
-              stroke="var(--border)"
+              fill="var(--iso-left)"
+              stroke="var(--iso-stroke)"
               strokeWidth="1"
             />
             <polygon
               points="34.64,0 0,20 0,60 34.64,40"
-              fill="var(--secondary)"
-              stroke="var(--border)"
+              fill="var(--iso-right)"
+              stroke="var(--iso-stroke)"
               strokeWidth="1"
             />
           </g>

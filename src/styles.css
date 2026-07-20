@@ -98,6 +98,11 @@
   --sidebar-ring: oklch(0.55 0.02 250);
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Isometric decor palette: light blue, indigo, cyan, soft violet, gray */
+  --iso-top: oklch(0.95 0.03 240);       /* light blue top face */
+  --iso-left: oklch(0.9 0.05 260);       /* soft violet left face */
+  --iso-right: oklch(0.92 0.06 220);     /* cyan right face */
+  --iso-stroke: oklch(0.75 0.05 255);    /* indigo-gray outline */
 }
 
 .dark {
