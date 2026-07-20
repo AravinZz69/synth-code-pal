@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Code2, Github, Loader2 } from "lucide-react";
+import { IsoBlock } from "@/components/iso-blocks";
 
 const CANONICAL_AUTH_ORIGIN = "https://code-space.life";
 
@@ -51,7 +52,13 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+      <div className="pointer-events-none absolute left-6 bottom-6 hidden md:block opacity-80">
+        <IsoBlock variant="staircase" palette="blue" width={200} height={220} />
+      </div>
+      <div className="pointer-events-none absolute right-6 top-6 hidden md:block opacity-80">
+        <IsoBlock variant="cluster" palette="violet" width={200} height={220} />
+      </div>
+      <div className="relative w-full max-w-sm">
         <div className="flex items-center justify-center gap-2 mb-8">
           <Code2 className="h-6 w-6 text-primary" />
           <span className="text-lg font-semibold">CodeSpace</span>
