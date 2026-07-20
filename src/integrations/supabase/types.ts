@@ -14,13 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      code_chunks: {
+        Row: {
+          content: string
+          created_at: string
+          embedding: string
+          end_line: number | null
+          id: string
+          kind: string | null
+          path: string
+          repository_id: string
+          start_line: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          embedding: string
+          end_line?: number | null
+          id?: string
+          kind?: string | null
+          path: string
+          repository_id: string
+          start_line?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          embedding?: string
+          end_line?: number | null
+          id?: string
+          kind?: string | null
+          path?: string
+          repository_id?: string
+          start_line?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_chunks_repository_id_fkey"
+            columns: ["repository_id"]
+            isOneToOne: false
+            referencedRelation: "repositories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      github_tokens: {
+        Row: {
+          access_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      repositories: {
+        Row: {
+          created_at: string
+          default_branch: string | null
+          file_tree: Json | null
+          id: string
+          mermaid: string | null
+          name: string
+          owner: string
+          status: string
+          status_message: string | null
+          tech_stack: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_branch?: string | null
+          file_tree?: Json | null
+          id?: string
+          mermaid?: string | null
+          name: string
+          owner: string
+          status?: string
+          status_message?: string | null
+          tech_stack?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_branch?: string | null
+          file_tree?: Json | null
+          id?: string
+          mermaid?: string | null
+          name?: string
+          owner?: string
+          status?: string
+          status_message?: string | null
+          tech_stack?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_chunks: {
+        Args: {
+          match_count?: number
+          p_repository_id: string
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          end_line: number
+          id: string
+          kind: string
+          path: string
+          similarity: number
+          start_line: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
