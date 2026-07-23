@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { embed } from "@/lib/ai-gateway.server";
+import { embedTexts } from "@/lib/ai-gateway.server";
 
 export default defineTool({
   name: "search_code",
@@ -31,7 +31,11 @@ export default defineTool({
     if (repoErr || !repo) {
       return { content: [{ type: "text", text: "Repository not found or not accessible." }], isError: true };
     }
-    const [embedding] = await embed([query]);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) {
+      return { content: [{ type: "text", text: "AI gateway not configured." }], isError: true };
+    }
+    const [embedding] = await embedTexts(apiKey, [query]);
     const { data, error } = await supabase.rpc("match_chunks", {
       p_repository_id: repository_id,
       query_embedding: embedding as unknown as string,

@@ -33,7 +33,10 @@ export default defineTool({
       return { content: [{ type: "text", text: "GitHub token missing for this user." }], isError: true };
     }
     try {
-      const content = await fetchRawFile(tok.access_token, repo.owner, repo.name, repo.default_branch, path);
+      const content = await fetchRawFile(repo.owner, repo.name, repo.default_branch, path, tok.access_token);
+      if (content == null) {
+        return { content: [{ type: "text", text: "File not found." }], isError: true };
+      }
       return {
         content: [{ type: "text", text: content.slice(0, 60_000) }],
         structuredContent: { path, truncated: content.length > 60_000 },
