@@ -7,6 +7,9 @@ const CANONICAL_AUTH_ORIGIN = "https://code-space.life";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — CodeSpace" },
@@ -18,18 +21,22 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const router = useRouter();
+  const { next } = Route.useSearch();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.navigate({ to: "/repos", replace: true });
+      if (data.user) {
+        if (next) window.location.replace(next);
+        else router.navigate({ to: "/repos", replace: true });
+      }
     });
-  }, [router]);
+  }, [router, next]);
 
   function signInGithub() {
     setLoading(true);
     const startUrl = new URL("/api/public/auth/github/start", CANONICAL_AUTH_ORIGIN);
-    startUrl.searchParams.set("redirect", "/repos");
+    startUrl.searchParams.set("redirect", next ?? "/repos");
     const url = startUrl.toString();
 
     window.setTimeout(() => setLoading(false), 8000);
