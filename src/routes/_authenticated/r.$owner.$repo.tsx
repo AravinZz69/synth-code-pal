@@ -8,7 +8,7 @@ import { regenerateArchitecture } from "@/lib/ingest.functions";
 import { runAction } from "@/lib/actions.functions";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { FileTree, type FileNode } from "@/components/file-tree";
-import { WorkflowDiagram, type WorkflowStep } from "@/components/workflow-diagram";
+import { workflowToMermaid } from "@/components/workflow-diagram";
 import { DocsView } from "@/components/docs-view";
 import { toast } from "sonner";
 import {
@@ -136,20 +136,6 @@ function OverviewPanel({ repo }: { repo: { id: string; owner: string; name: stri
   const stack = (repo.tech_stack ?? {}) as {
     languages?: string[]; frameworks?: string[]; package_managers?: string[]; build_tools?: string[];
   };
-  const workflowSteps = (repo.workflow ?? "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const COLORS: WorkflowStep["color"][] = ["blue", "indigo", "violet", "cyan", "amber", "pink", "emerald", "slate"];
-  const wfDiagram: WorkflowStep[] = workflowSteps.map((raw, i) => {
-    const cleaned = raw.replace(/^\d+[.)]\s*/, "");
-    const [head, ...rest] = cleaned.split(/[:—-]\s+/);
-    return {
-      title: (head ?? cleaned).slice(0, 90),
-      detail: rest.length ? rest.join(" — ") : cleaned,
-      color: COLORS[i % COLORS.length],
-    };
-  });
 
   if (repo.status !== "ready") {
     return (
@@ -175,28 +161,6 @@ function OverviewPanel({ repo }: { repo: { id: string; owner: string; name: stri
           </p>
         </section>
 
-        <section>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Workflow</div>
-          {wfDiagram.length > 0 ? (
-            <WorkflowDiagram steps={wfDiagram} />
-          ) : (
-            <p className="text-sm text-muted-foreground">No workflow generated.</p>
-          )}
-        </section>
-
-        <section>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Architecture</div>
-          <div className="rounded-md border border-border bg-card p-4">
-            {repo.mermaid ? (
-              <ClientOnly fallback={<div className="text-xs text-muted-foreground">Rendering diagram…</div>}>
-                <MermaidDiagram code={repo.mermaid} />
-              </ClientOnly>
-            ) : (
-              <div className="text-xs text-muted-foreground">No diagram available.</div>
-            )}
-          </div>
-        </section>
-
         {(stack.languages?.length || stack.frameworks?.length) && (
           <section>
             <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Tech stack</div>
@@ -212,7 +176,7 @@ function OverviewPanel({ repo }: { repo: { id: string; owner: string; name: stri
   );
 }
 
-function RightPanel({ repo }: { repo: { id: string; mermaid: string | null; tech_stack: unknown; status: string } }) {
+function RightPanel({ repo }: { repo: { id: string; mermaid: string | null; workflow: string | null; tech_stack: unknown; status: string } }) {
   const qc = useQueryClient();
   const fnRegen = useServerFn(regenerateArchitecture);
   const regen = useMutation({
@@ -222,6 +186,7 @@ function RightPanel({ repo }: { repo: { id: string; mermaid: string | null; tech
   const stack = (repo.tech_stack ?? {}) as {
     languages?: string[]; frameworks?: string[]; package_managers?: string[]; build_tools?: string[];
   };
+  const workflowMermaid = workflowToMermaid(repo.workflow ?? "");
   return (
     <div className="p-4 space-y-4">
       <section>
@@ -243,6 +208,18 @@ function RightPanel({ repo }: { repo: { id: string; mermaid: string | null; tech
             </ClientOnly>
           ) : (
             <div className="text-xs text-muted-foreground">Waiting for ingestion…</div>
+          )}
+        </div>
+      </section>
+      <section>
+        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Workflow</h3>
+        <div className="rounded-md border border-border bg-card p-3">
+          {workflowMermaid ? (
+            <ClientOnly fallback={<div className="text-xs text-muted-foreground">Rendering…</div>}>
+              <MermaidDiagram code={workflowMermaid} />
+            </ClientOnly>
+          ) : (
+            <div className="text-xs text-muted-foreground">No workflow generated.</div>
           )}
         </div>
       </section>

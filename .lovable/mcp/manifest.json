@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://efyletemaglatwhjwsqs.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "codespace-mcp",
+      "version": "0.1.0",
+      "title": "CodeSpace"
+    },
+    "tools": [
+      {
+        "name": "list_repositories",
+        "title": "List repositories",
+        "description": "List the CodeSpace repositories the signed-in user has connected.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_code",
+        "title": "Semantic code search",
+        "description": "Semantic search across a connected repository's chunked source code. Returns the top matching snippets with file path and line range.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "repository_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Repository UUID (from list_repositories)."
+            },
+            "query": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Natural language search query."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "description": "Max results (default 8)."
+            }
+          },
+          "required": [
+            "repository_id",
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_file",
+        "title": "Get file contents",
+        "description": "Fetch the raw contents of a file from a connected repository at its default branch.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "repository_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "File path relative to repo root."
+            }
+          },
+          "required": [
+            "repository_id",
+            "path"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_architecture",
+        "title": "Get architecture & overview",
+        "description": "Return the CodeSpace-generated description, workflow, layered architecture (Mermaid), and detected tech stack for a repository.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "repository_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "repository_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
