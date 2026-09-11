@@ -69,6 +69,7 @@ function Landing() {
           </nav>
           <Link
             to="/auth"
+            search={{ next: undefined }}
             className="rounded-md bg-primary text-primary-foreground px-4 py-1.5 text-sm font-medium hover:opacity-90"
           >
             GitHub Login
@@ -93,6 +94,7 @@ function Landing() {
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link
             to="/auth"
+            search={{ next: undefined }}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90"
           >
             Get Started <ArrowRight className="h-4 w-4" />
