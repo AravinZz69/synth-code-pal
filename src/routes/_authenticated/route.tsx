@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth", search: {} });
+    if (error || !data.user) throw redirect({ to: "/auth", search: { next: undefined } });
     return { user: data.user };
   },
   component: AuthedLayout,
@@ -24,7 +24,7 @@ function AuthedLayout() {
 
   async function signOut() {
     await supabase.auth.signOut();
-    router.navigate({ to: "/auth", replace: true, search: {} });
+    router.navigate({ to: "/auth", replace: true, search: { next: undefined } });
   }
 
   return (
